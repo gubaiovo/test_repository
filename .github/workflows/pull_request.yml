@@ -1,0 +1,50 @@
+# .github/workflows/pull-request.yml
+name: Challenge Validation
+
+on:
+  pull_request_target:
+    branches: [master]
+    paths:
+      - 'Base/**'
+      - 'Normal/**'
+      - 'Hard/**'
+      - 'Other/**'
+    types: [opened, synchronize, reopened, labeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v42
+      with:
+        files: |
+          Base/**
+          Normal/**
+          Hard/**
+          Other/**
+
+    - name: Validate Challenges
+      run: python scripts/check.py
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.number }}
+        EVENT_TYPE: ${{ github.event.action }}
