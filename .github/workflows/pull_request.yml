@@ -47,7 +47,7 @@ jobs:
           Other/**
 
     - name: Validate Challenges
-      run: python scripts/check.py
+      run: python ../scripts/check.py
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PR_NUMBER: ${{ github.event.number }}
