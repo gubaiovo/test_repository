@@ -26,23 +26,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        repository: "gubaiovo/test"  # 硬编码仓库名称
+        repository: "gubaiovo/test"
         ref: ${{ github.event.pull_request.head.sha }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}  
+        fetch-depth: 0  
 
-    - name: Verify Repository
-      run: |
-        echo "当前仓库地址："
-        git remote -v
-        echo "预期仓库地址：https://github.com/gubaiovo/test.git"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
     - name: Get changed files
       id: changed-files
       uses: tj-actions/changed-files@v42
       with:
+        repository: "gubaiovo/test"
         token: ${{ secrets.GITHUB_TOKEN }}
-        repository: "gubaiovo/test"  # 硬编码仓库名称
         files: |
           Base/**
           Normal/**
