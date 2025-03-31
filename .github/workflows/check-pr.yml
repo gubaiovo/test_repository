@@ -1,0 +1,92 @@
+name: PR Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-challenge:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup jq
+      run: sudo apt-get install -y jq
+
+    - name: Validate structure
+      run: |
+        #!/bin/bash
+        set -eo pipefail
+
+        # 获取所有在难度目录下的新增文件夹
+        dirs=$(git diff --diff-filter=d --name-only origin/main...HEAD | grep -o -E '^(base|normal|hard)/[^/]+' | sort -u)
+
+        for dir in $dirs; do
+          echo "Checking directory: $dir"
+          
+          # 检查目录命名格式
+          if [[ ! $(basename $dir) =~ ^\[.+\]\ .+$ ]]; then
+            echo "::error::Invalid folder name format: $dir"
+            exit 1
+          fi
+
+          # 解析目录信息
+          difficulty=$(dirname "$dir")
+          folder_name=$(basename "$dir")
+          expected_category=$(echo "$folder_name" | sed -E 's/^\[([^]]+)\].*/\1/')
+          expected_name=$(echo "$folder_name" | sed -E 's/^\[[^]]+\]\s*(.*)/\1/')
+
+          # 检查doc.json存在性
+          if [ ! -f "$dir/doc.json" ]; then
+            echo "::error::Missing doc.json in $dir"
+            exit 1
+          fi
+
+          # 解析doc.json
+          doc=$(cat "$dir/doc.json")
+
+          # 检查必需字段
+          required_fields=(
+            ".author"
+            ".challenge.difficulty"
+            ".challenge.category" 
+            ".challenge.name"
+            ".challenge.introduction"
+          )
+
+          for field in "${required_fields[@]}"; do
+            if ! jq -e "$field" <<< "$doc" >/dev/null; then
+              echo "::error::Missing required field $field in $dir/doc.json"
+              exit 1
+            fi
+          done
+
+          # 验证字段一致性
+          actual_diff=$(jq -r '.challenge.difficulty' <<< "$doc")
+          actual_category=$(jq -r '.challenge.category' <<< "$doc")
+          actual_name=$(jq -r '.challenge.name' <<< "$doc")
+
+          if [ "${actual_diff,,}" != "${difficulty,,}" ]; then
+            echo "::error::Difficulty mismatch in $dir: doc says $actual_diff but folder is in $difficulty"
+            exit 1
+          fi
+
+          if [ "$actual_category" != "$expected_category" ]; then
+            echo "::error::Category mismatch in $dir: doc says $actual_category but folder shows $expected_category"
+            exit 1
+          fi
+
+          if [ "$actual_name" != "$expected_name" ]; then
+            echo "::error::Name mismatch in $dir: doc says $actual_name but folder shows $expected_name"
+            exit 1
+          fi
+
+          echo "Validation passed for $dir"
+        done
+
+        if [ -z "$dirs" ]; then
+          echo "::warning::No challenge folders detected in PR"
+        fi
