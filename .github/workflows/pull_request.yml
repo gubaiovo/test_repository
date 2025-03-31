@@ -2,7 +2,7 @@
 name: Challenge Validation
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
     paths:
       - 'Base/**'
@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  contents: read
   pull-requests: write
 
 jobs:
@@ -26,6 +27,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
+        token: ${{ secrets.GITHUB_TOKEN }}  
+        fetch-depth: 0  
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -36,6 +39,7 @@ jobs:
       id: changed-files
       uses: tj-actions/changed-files@v42
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         files: |
           Base/**
           Normal/**
