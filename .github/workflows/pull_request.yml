@@ -15,7 +15,7 @@ permissions:
 on:
   pull_request_target:
     branches:
-      - master
+      - main
     paths-ignore: # Skip run for security reasons
       - .github/workflows/**/*.py
     types:
