@@ -1,0 +1,82 @@
+name: PR Check
+permissions:
+  contents: write
+  
+on:
+  pull_request_target:
+    branches:
+      - main
+    paths-ignore: # Skip run for security reasons
+      - .github/workflows/**/*.py
+    types:
+      - opened
+      - synchronize
+      - closed
+      - labeled
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest 
+
+    # To reduce useless runs
+    if: |
+      (github.event.action != 'closed' || github.event.pull_request.merged) &&
+      (github.event.action != 'labeled' || github.event.label.name == 'recheck')
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v18
+        with:
+          files: |
+            test_repository/Other/**
+            test_repository/Hard/**
+            test_repository/Normal/**
+            test_repository/Base/**
+
+      - name: List all changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "$file was changed"
+          done
+
+      - name: Check if changes are in a single difficulty folder
+        id: check-folder
+        run: |
+        
+          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -vqE '^test_repository/(Other|Normal|Hard|Base)/'; then
+            echo "错误: 更改的文件不在test_repository/Other、test_repository/Normal或test_repository/Hard文件夹中"
+            exit 1
+          fi
+
+          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | uniq | wc -l | grep -q '^1$'; then
+            echo "更改的文件夹: $(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)"
+            echo "changed_folder=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)" >> $GITHUB_ENV
+          else
+            echo "错误: 更改的文件分布在不同的难度文件夹中"
+            exit 1
+          fi
+          
+      
+      
+
+
+
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Requirements
+        run: |
+          pip install -r scripts/requirements.txt
+      
+      - name: Run Checker
+        run: |
+          python scripts/pr_check.py
