@@ -1,7 +1,13 @@
 name: PR Check
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: write
-  
+  contents: read
+  pull-requests: write
+  issues: write
+
 on:
   pull_request_target:
     branches:
@@ -31,36 +37,18 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v18
+        uses: lots0logs/gh-action-get-changed-files@2.2.2
         with:
-          files: |
-            test_repository/Other/**
-            test_repository/Hard/**
-            test_repository/Normal/**
-            test_repository/Base/**
-
-      - name: List all changed files
-        run: |
-          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            echo "$file was changed"
-          done
-
-      - name: Check if changes are in a single difficulty folder
-        id: check-folder
-        run: |
+          token: ${{ secrets.GITHUB_TOKEN }}
         
-          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -vqE '^test_repository/(Other|Normal|Hard|Base)/'; then
-            echo "错误: 更改的文件不在test_repository/Other、test_repository/Normal或test_repository/Hard文件夹中"
-            exit 1
-          fi
+      - name: Write changed files to JSON
+        run: |
+          mkdir -p .github/outputs
+          echo '${{ steps.changed-files.outputs.added }}' > .github/outputs/added_files.json
+          echo '${{ steps.changed-files.outputs.all }}' > .github/outputs/all_changed_files.json
+          echo '${{ steps.changed-files.outputs.deleted }}' > .github/outputs/deleted_files.json
+        shell: bash
 
-          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | uniq | wc -l | grep -q '^1$'; then
-            echo "更改的文件夹: $(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)"
-            echo "changed_folder=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)" >> $GITHUB_ENV
-          else
-            echo "错误: 更改的文件分布在不同的难度文件夹中"
-            exit 1
-          fi
           
       
       
