@@ -40,7 +40,15 @@ jobs:
         uses: lots0logs/gh-action-get-changed-files@2.2.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-        
+      
+      - name: List changed files
+        run: |
+          echo "Added files:"
+          echo "${{ steps.changed-files.outputs.added }}"
+          echo "All changed files:"
+          echo "${{ steps.changed-files.outputs.all }}"
+          echo "Deleted files:"
+          echo "${{ steps.changed-files.outputs.deleted }}"
       - name: Write changed files to JSON
         run: |
           mkdir -p .github/outputs
