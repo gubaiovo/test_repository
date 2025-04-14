@@ -74,3 +74,11 @@ jobs:
       - name: Run Checker
         run: |
           python .github/workflows/scripts/pr_check.py
+        env:
+          # scripts
+          github_api_token: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_TYPE: ${{ github.event.action }}
+          IS_MERGED: ${{ github.event.pull_request.merged }}
+
+          # gh_cli
+          PR_NUMBER: ${{ github.event.number }}
