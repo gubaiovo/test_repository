@@ -34,10 +34,10 @@ jobs:
         uses: tj-actions/changed-files@v18
         with:
           files: |
-            JNSEC-PWN/Other/**
-            JNSEC-PWN/Hard/**
-            JNSEC-PWN/Normal/**
-            JNSEC-PWN/Base/**
+            test_repository/Other/**
+            test_repository/Hard/**
+            test_repository/Normal/**
+            test_repository/Base/**
 
       - name: List all changed files
         run: |
@@ -49,14 +49,14 @@ jobs:
         id: check-folder
         run: |
         
-          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -vqE '^JNSEC-PWN/(Other|Normal|Hard|Base)/'; then
-            echo "错误: 更改的文件不在JNSEC-PWN/Other、JNSEC-PWN/Normal或JNSEC-PWN/Hard文件夹中"
+          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -vqE '^test_repository/(Other|Normal|Hard|Base)/'; then
+            echo "错误: 更改的文件不在test_repository/Other、test_repository/Normal或test_repository/Hard文件夹中"
             exit 1
           fi
 
-          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^JNSEC-PWN/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | uniq | wc -l | grep -q '^1$'; then
-            echo "更改的文件夹: $(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^JNSEC-PWN/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)"
-            echo "changed_folder=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^JNSEC-PWN/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)" >> $GITHUB_ENV
+          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | uniq | wc -l | grep -q '^1$'; then
+            echo "更改的文件夹: $(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)"
+            echo "changed_folder=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E '^test_repository/(Other|Normal|Hard)/' | awk -F'/' '{print $2}' | head -n 1)" >> $GITHUB_ENV
           else
             echo "错误: 更改的文件分布在不同的难度文件夹中"
             exit 1
